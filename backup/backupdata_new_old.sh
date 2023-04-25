@@ -1,22 +1,22 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # backup database 
 #
 
 HOSTADDRESS="172.30.2.99"
-DATABASE="mobibank"
-USER="mobibank"
+DATABASE="smgs"
+USER="smgs"
 PASSWORD=""
 ERRORFILE="/var/tmp/psqlerror.err"
 DAY="`date +'%Y-%m-%d'`"
 MONTH="`date +'%Y-%m'`"
 SHAREFOLDER="/mnt/backup"
 BACKUPDIR="$SHAREFOLDER/databases"
-PERIOD="daily"
+PERIOD="monthly"
 
 # Welcome
 echo "Backup script started $0" 
-echo "Today: `date +"%Y-%m-%d %M:%S"`"
+echo "Today: `date`"
 
 # Test database connection
 TEMP="`psql -h $HOSTADDRESS -U $USER -l 2>$ERRORFILE`"
@@ -65,11 +65,9 @@ fi
 # Backup database
 echo -n "Starting Backup '$DATABASE' ... " 
 if [[ $PERIOD = "daily" ]];then
-pg_dump -h $HOSTADDRESS -U $USER $DATABASE > $BACKUPDIR/$DATABASE-$DAY.sql 2>$ERRORFILE 
-gzip $BACKUPDIR/$DATABASE-$DAY.sql 2>$ERRORFILE
+pg_dump -h $HOSTADDRESS -U $USER $DATABASE 2>$ERRORFILE | gzip > $BACKUPDIR/$DATABASE-$DAY.gz 2>$ERRORFILE
 elif [[ $PERIOD = "monthly" ]]; then
-pg_dump -h $HOSTADDRESS -U $USER $DATABASE > $BACKUPDIR/$DATABASE-$MONTH.sql 2>$ERRORFILE
-gzip $BACKUPDIR/$DATABASE-$MONTH.sql 2>$ERRORFILE
+pg_dump -h $HOSTADDRESS -U $USER $DATABASE 2>$ERRORFILE | gzip > $BACKUPDIR/$DATABASE-$MONTH.gz 2>$ERRORFILE
 fi
 
 if [[ $? != 0 ]]; then
@@ -85,5 +83,6 @@ if [[ $? != 0 ]]; then
 fi
 echo "Shared folder is unmounted successfully."
 
+echo "Backup script ended: `date`"
 # Clean files and temp folders
 rm -f $ERRORFILE
